@@ -404,9 +404,7 @@ object InternetCard {
             buffer.put(queue.poll())
             read += 1
           }
-          if (read == 0) {
-            readMore()
-          }
+          readMore()
           result(buffer.array.view(0, read).toArray)
         }
       }
@@ -457,12 +455,22 @@ object InternetCard {
         if (!eof) reader = threadPool.submit(new Runnable {
           override def run(): Unit = {
             val buffer = new Array[Byte](Settings.get.maxReadBuffer)
-            val count = stream.get.read(buffer)
-            if (count < 0) {
-              eof = true
-            }
-            for (i <- 0 until count) {
-              queue.add(buffer(i))
+            var count = 1
+            var totalRead = 0
+            // Not EOF
+            // We read a value
+            // We can still fit the value in the config
+            while(!eof && count > 0 && totalRead < buffer.length) {
+              // Don't read more than config value
+              count = stream.get.read(buffer, 0, buffer.length - totalRead)
+              if (count < 0) {
+                eof = true
+              }
+              OpenComputers.log.info("Reading more bytes: " + count)
+              for (i <- 0 until count) {
+                queue.add(buffer(i))
+              }
+              totalRead += count
             }
           }
         })
