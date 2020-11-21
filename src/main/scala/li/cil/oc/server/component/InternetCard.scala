@@ -466,7 +466,6 @@ object InternetCard {
               if (count < 0) {
                 eof = true
               }
-              OpenComputers.log.info("Reading more bytes: " + count)
               for (i <- 0 until count) {
                 queue.add(buffer(i))
               }
